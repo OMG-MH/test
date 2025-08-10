@@ -7,7 +7,7 @@ from handlers import register_handlers  # نفس اللي عندك
 bot = telebot.TeleBot(BOT_TOKEN)
 register_handlers(bot)  # تسجيل أوامر وحداتك
 
-app = Flask(name)
+app = Flask(__name__)
 
 @app.route(f"/{BOT_TOKEN}", methods=['POST'])
 def webhook():
@@ -20,7 +20,7 @@ def webhook():
 def home():
     return "🤖 البوت يعمل الآن Webhook!", 200
 
-if name == "main":
+if __name__ == "__main__":
     WEBHOOK_URL = f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/{BOT_TOKEN}"
     bot.remove_webhook()
     bot.set_webhook(url=WEBHOOK_URL)

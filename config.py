@@ -7,6 +7,8 @@ ADMIN_ID2 = 1622423250
 ADMIN_NAME2 = "ملاك"
 ADMIN_ID3 = 5032195245
 ADMIN_NAME3 = "سماح"
+ADMIN_ID4 = 7721652635
+ADMIN_NAME = "نور"
 
 # عناوين الردود السريعة
 QUICK_REPLY_LABEL1 = "تم الشحن ✅"

@@ -4,8 +4,8 @@ from telebot import types
 import threading
 import time
 
-from config import ADMIN_NAME1, ADMIN_NAME2, ADMIN_NAME3
-from config import ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, QUICK_REPLY_LABEL1, QUICK_REPLY_LABEL2, QUICK_REPLY_LABEL3
+from config import ADMIN_NAME1, ADMIN_NAME2, ADMIN_NAME3, ADMIN_NAME4
+from config import ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, QUICK_REPLY_LABEL1, QUICK_REPLY_LABEL2, QUICK_REPLY_LABEL3
 from utils import (add_pending_entry, remove_pending_entry, get_pending_entry,
                    add_assignment, remove_assignment, get_assignment,
                    extract_user_id, admin_keyboard)

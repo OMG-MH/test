@@ -1,94 +1,103 @@
 # utils.py
 import os
 import re
+import requests
+import urllib.parse
+
+# إعدادات السيرفر
+STORAGE_URL = "http://omg-mh-tools1.mygamesonline.org/storage.php"
+SECRET_KEY = "OMGVIP"
 
 PENDING_FILE = "pending_messages.txt"
 ASSIGNMENTS_FILE = "assignments.txt"
 
 
+def remote_request(action, filename, data=None):
+    params = {
+        "key": SECRET_KEY,
+        "action": action,
+        "filename": filename
+    }
+    if data is not None:
+        params["data"] = data
+    response = requests.get(STORAGE_URL, params=params)
+    response.raise_for_status()
+    return response.text
+
+
 def ensure_file(path):
-    if not os.path.exists(path):
-        open(path, "w", encoding="utf-8").close()
+    # لو الملف مش موجود على السيرفر، نعمله إنشاء فارغ
+    if remote_request("read", path) == "":
+        remote_request("write", path, "")
 
 
 def add_pending_entry(key: str, user_id: int, username: str, text: str):
     ensure_file(PENDING_FILE)
     safe_text = text.replace("\n", "\\n")
-    line = f"{key}|||{user_id}|||{username}|||{safe_text}\n"
-    with open(PENDING_FILE, "a", encoding="utf-8") as f:
-        f.write(line)
+    line = f"{key}|{user_id}|{username}|||{safe_text}\n"
+    remote_request("append", PENDING_FILE, line)
 
 
 def remove_pending_entry(key: str):
     ensure_file(PENDING_FILE)
-    with open(PENDING_FILE, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-    with open(PENDING_FILE, "w", encoding="utf-8") as f:
-        for line in lines:
-            if not line.startswith(f"{key}|||"):
-                f.write(line)
+    lines = remote_request("read", PENDING_FILE).splitlines()
+    new_lines = [l for l in lines if not l.startswith(f"{key}|||")]
+    remote_request("write", PENDING_FILE, "\n".join(new_lines) + ("\n" if new_lines else ""))
 
 
 def get_pending_entry(key: str):
     ensure_file(PENDING_FILE)
-    with open(PENDING_FILE, "r", encoding="utf-8") as f:
-        for line in f:
-            if line.startswith(f"{key}|||"):
-                parts = line.rstrip("\n").split("|||", 3)
-                if len(parts) == 4:
-                    return {
-                        "key": parts[0],
-                        "user_id": int(parts[1]),
-                        "username": parts[2],
-                        "text": parts[3].replace("\\n", "\n"),
-                    }
+    for line in remote_request("read", PENDING_FILE).splitlines():
+        if line.startswith(f"{key}|||"):
+            parts = line.rstrip("\n").split("|||", 3)
+            if len(parts) == 4:
+                return {
+                    "key": parts[0],
+                    "user_id": int(parts[1]),
+                    "username": parts[2],
+                    "text": parts[3].replace("\\n", "\n"),
+                }
     return None
 
 
 def list_all_pending():
     ensure_file(PENDING_FILE)
     results = []
-    with open(PENDING_FILE, "r", encoding="utf-8") as f:
-        for line in f:
-            parts = line.rstrip("\n").split("|||", 3)
-            if len(parts) == 4:
-                results.append({
-                    "key": parts[0],
-                    "user_id": int(parts[1]),
-                    "username": parts[2],
-                    "text": parts[3].replace("\\n", "\n"),
-                })
+    for line in remote_request("read", PENDING_FILE).splitlines():
+        parts = line.rstrip("\n").split("|||", 3)
+        if len(parts) == 4:
+            results.append({
+                "key": parts[0],
+                "user_id": int(parts[1]),
+                "username": parts[2],
+                "text": parts[3].replace("\\n", "\n"),
+            })
     return results
 
 
 def add_assignment(user_id: int, admin_id: int):
     ensure_file(ASSIGNMENTS_FILE)
     remove_assignment(user_id)
-    with open(ASSIGNMENTS_FILE, "a", encoding="utf-8") as f:
-        f.write(f"{user_id}:{admin_id}\n")
+    remote_request("append", ASSIGNMENTS_FILE, f"{user_id}:{admin_id}\n")
 
 
 def remove_assignment(user_id: int):
     ensure_file(ASSIGNMENTS_FILE)
-    with open(ASSIGNMENTS_FILE, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-    with open(ASSIGNMENTS_FILE, "w", encoding="utf-8") as f:
-        for line in lines:
-            if not line.startswith(f"{user_id}:"):
-                f.write(line)
+    lines = remote_request("read", ASSIGNMENTS_FILE).splitlines()
+    new_lines = [l for l in lines if not l.startswith(f"{user_id}:")]
+    remote_request("write", ASSIGNMENTS_FILE, "\n".join(new_lines) + ("\n" if new_lines else ""))
 
 
 def get_assignment(user_id: int):
     ensure_file(ASSIGNMENTS_FILE)
-    with open(ASSIGNMENTS_FILE, "r", encoding="utf-8") as f:
-        for line in f:
-            if line.startswith(f"{user_id}:"):
-                parts = line.strip().split(":", 1)
-                if len(parts) == 2:
-                    try:
-                        return int(parts[1])
-                    except:
-                        return None
+    for line in remote_request("read", ASSIGNMENTS_FILE).splitlines():
+        if line.startswith(f"{user_id}:"):
+            parts = line.strip().split(":", 1)
+            if len(parts) == 2:
+                try:
+                    return int(parts[1])
+                except:
+                    return None
     return None
 
 

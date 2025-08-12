@@ -86,6 +86,9 @@ def register_handlers(bot: telebot.TeleBot):
                 "طريقة التسجيل بالباركود:\n1- افتح الملف الشخصي\n2- اضغط على QR Code\n3- اعمل مسح للباركود المرسل.",
             )
             return
+        bot.send_message(target_id,
+                             f"<b><u>{txt}</u></b>",
+                             parse_mode="HTML")
 
         send_countdown_message(bot, message.chat.id, "✅ تم إرسال الرد.")
 

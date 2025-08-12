@@ -9,6 +9,8 @@ ADMIN_ID3 = 5032195245
 ADMIN_NAME3 = "سماح"
 ADMIN_ID4 = 7721652635
 ADMIN_NAME4 = "نور"
+ADMIN_ID5 = 7227455963
+ADMIN_NAME5 = "علاء"
 
 # عناوين الردود السريعة
 QUICK_REPLY_LABEL1 = "تم الشحن ✅"

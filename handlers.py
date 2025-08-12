@@ -87,37 +87,7 @@ def register_handlers(bot: telebot.TeleBot):
             )
             return
 
-        try:
-            bot.send_message(target_id,
-                             f"<b><u>{txt}</u></b>",
-                             parse_mode="HTML")
-
-            countdown_msg = bot.send_message(message.chat.id,
-                                             "✅ تم إرسال الرد. (5)")
-
-            def countdown_and_delete(msg_id, chat_id):
-                for i in range(5, 0, -1):
-                    try:
-                        bot.edit_message_text(f"✅ تم إرسال الرد. ({i})",
-                                              chat_id, msg_id)
-                    except:
-                        pass
-                    time.sleep(1)
-                try:
-                    bot.delete_message(chat_id, msg_id)
-                except:
-                    pass
-
-            threading.Thread(target=countdown_and_delete,
-                             args=(countdown_msg.message_id,
-                                   countdown_msg.chat.id)).start()
-
-        except Exception as e:
-            bot.send_message(message.chat.id,
-                             f"❌ خطأ عند إرسال الرد: {e}",
-                             reply_markup=admin_keyboard(
-                                 QUICK_REPLY_LABEL1, QUICK_REPLY_LABEL2,
-                                 QUICK_REPLY_LABEL3))
+        send_countdown_message(bot, message.chat.id, "✅ تم إرسال الرد.")
 
     @bot.message_handler(func=lambda m: m.from_user.id in [
         ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4

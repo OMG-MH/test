@@ -3,20 +3,23 @@ import telebot
 from telebot import types
 import threading
 import time
+from utils import remote_request
 
 from config import ADMIN_NAME1, ADMIN_NAME2, ADMIN_NAME3, ADMIN_NAME4
 from config import ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, QUICK_REPLY_LABEL1, QUICK_REPLY_LABEL2, QUICK_REPLY_LABEL3
 from utils import (add_pending_entry, remove_pending_entry, get_pending_entry,
                    add_assignment, remove_assignment, get_assignment,
-                   extract_user_id, admin_keyboard)
+                   extract_user_id, admin_keyboard, send_countdown_message,
+                   edit_with_countdown)
 
 
 def register_handlers(bot: telebot.TeleBot):
 
     @bot.message_handler(
-        func=lambda m: m.from_user.id in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4] and
-        m.text in [QUICK_REPLY_LABEL1, QUICK_REPLY_LABEL2, QUICK_REPLY_LABEL3
-                   ] and m.reply_to_message is None)
+        func=lambda m: m.from_user.id in
+        [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4] and m.text in [
+            QUICK_REPLY_LABEL1, QUICK_REPLY_LABEL2, QUICK_REPLY_LABEL3
+        ] and m.reply_to_message is None)
     def warn_no_reply(message):
         bot.send_message(
             message.chat.id,
@@ -24,10 +27,10 @@ def register_handlers(bot: telebot.TeleBot):
             reply_markup=admin_keyboard(QUICK_REPLY_LABEL1, QUICK_REPLY_LABEL2,
                                         QUICK_REPLY_LABEL3))
 
-    @bot.message_handler(
-        func=lambda m: m.from_user.id in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4
-                                          ] and m.reply_to_message is not None,
-        content_types=['text'])
+    @bot.message_handler(func=lambda m: m.from_user.id in [
+        ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4
+    ] and m.reply_to_message is not None,
+                         content_types=['text'])
     def admin_reply(message):
         if not message.reply_to_message:
             return
@@ -116,10 +119,10 @@ def register_handlers(bot: telebot.TeleBot):
                                  QUICK_REPLY_LABEL1, QUICK_REPLY_LABEL2,
                                  QUICK_REPLY_LABEL3))
 
-    @bot.message_handler(
-        func=lambda m: m.from_user.id in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4
-                                          ] and m.reply_to_message is not None,
-        content_types=['photo'])
+    @bot.message_handler(func=lambda m: m.from_user.id in [
+        ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4
+    ] and m.reply_to_message is not None,
+                         content_types=['photo'])
     def admin_reply_photo(message):
         original = message.reply_to_message.text or message.reply_to_message.caption or ""
         target_id = extract_user_id(original)
@@ -181,6 +184,8 @@ def register_handlers(bot: telebot.TeleBot):
                                  QUICK_REPLY_LABEL1, QUICK_REPLY_LABEL2,
                                  QUICK_REPLY_LABEL3))
 
+    REFERRALS_FILE = "referrals.txt"  # اسم الملف على السيرفر البعيد
+
     @bot.message_handler(commands=['start'])
     def start(message):
         uid = message.from_user.id
@@ -197,26 +202,30 @@ def register_handlers(bot: telebot.TeleBot):
                                             QUICK_REPLY_LABEL3),
             )
         else:
-            # تحقق من إذا كان المستخدم مسجلاً من قبل
-            already_referred = False
+            # قراءة الملف من السيرفر
             try:
-                with open("referrals.txt", "r", encoding="utf-8") as f:
-                    for line in f:
-                        if f"(ID: {uid})" in line:
-                            already_referred = True
-                            break
-            except FileNotFoundError:
-                pass
+                file_content = remote_request("read", REFERRALS_FILE)
+            except Exception as e:
+                print(f"خطأ أثناء قراءة ملف الدعوات من السيرفر: {e}")
+                file_content = ""
+
+            already_referred = False
+            for line in file_content.splitlines():
+                if f"(ID: {uid})" in line:
+                    already_referred = True
+                    break
 
             if ref_code and not already_referred:
                 username = message.from_user.username or message.from_user.first_name or "Unknown"
+                new_line = f"المستخدم: {username} (ID: {uid}) تم دعوته من: {ref_code}\n"
+
+                # كتابة البيانات الجديدة على السيرفر
                 try:
-                    with open("referrals.txt", "a", encoding="utf-8") as f:
-                        f.write(
-                            f"المستخدم: {username} (ID: {uid}) تم دعوته من: {ref_code}\n"
-                        )
+                    updated_content = file_content + new_line
+                    remote_request("write", REFERRALS_FILE, updated_content)
                 except Exception as e:
-                    print(f"خطأ أثناء كتابة ملف الدعوات: {e}")
+                    print(f"خطأ أثناء كتابة ملف الدعوات على السيرفر: {e}")
+
             elif ref_code and already_referred:
                 print(f"المستخدم {uid} دخل برابط دعوة لكن مسجّل من قبل.")
 
@@ -369,25 +378,43 @@ def register_handlers(bot: telebot.TeleBot):
         func=lambda call: call.data and call.data.startswith("accept:"))
     def accept_callback(call):
         admin_id = call.from_user.id
+
         if admin_id not in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4]:
             bot.answer_callback_query(call.id, "❌ غير مسموح بهذا الإجراء.")
             return
 
         key = call.data.split(":", 1)[1]
+        # print(f"🔍 key من الزر: {key}")
         entry = get_pending_entry(key)
         if not entry:
-            bot.edit_message_text(
+            edit_with_countdown(
+                bot,
+                call.message.chat.id,
+                call.message.message_id,
                 "⚠️ هذه الرسالة لم تعد متاحة (تم قبولها أو حذفها).",
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id)
+                seconds=5,
+                delete_after=True)
             return
-
-        remove_pending_entry(key)
 
         user_id = entry["user_id"]
         username = entry["username"]
         text = entry["text"]
 
+        # ✅ تحقق إذا كان شخص آخر قبلك قبله
+        current_assignee = get_assignment(user_id)
+        if current_assignee and current_assignee != admin_id:
+            edit_with_countdown(bot,
+                                call.message.chat.id,
+                                call.message.message_id,
+                                "⚠️ تم قبول هذه الرسالة من قبل شخص آخر.",
+                                seconds=5,
+                                delete_after=True)
+            return
+
+        # نحذفها من قائمة الانتظار
+        remove_pending_entry(key)
+
+        # نربطك بالمستخدم
         add_assignment(user_id, admin_id)
 
         try:
@@ -406,6 +433,12 @@ def register_handlers(bot: telebot.TeleBot):
                     reply_markup=admin_keyboard(QUICK_REPLY_LABEL1,
                                                 QUICK_REPLY_LABEL2,
                                                 QUICK_REPLY_LABEL3))
+                edit_with_countdown(bot,
+                                    call.message.chat.id,
+                                    call.message.message_id,
+                                    "تم قبول الرسالة ✅",
+                                    seconds=5,
+                                    delete_after=True)
             else:
                 bot.send_message(
                     admin_id,
@@ -413,6 +446,12 @@ def register_handlers(bot: telebot.TeleBot):
                     reply_markup=admin_keyboard(QUICK_REPLY_LABEL1,
                                                 QUICK_REPLY_LABEL2,
                                                 QUICK_REPLY_LABEL3))
+                edit_with_countdown(bot,
+                                    call.message.chat.id,
+                                    call.message.message_id,
+                                    "تم قبول الرسالة ✅",
+                                    seconds=5,
+                                    delete_after=True)
         except Exception as e:
             print("خطأ عند إرسال المحتوى للأدمن بعد القبول:", e)
             bot.edit_message_text("حدث خطأ أثناء إرسال الرسالة للأدمن.",

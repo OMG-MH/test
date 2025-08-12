@@ -5,8 +5,8 @@ import threading
 import time
 from utils import remote_request
 
-from config import ADMIN_NAME1, ADMIN_NAME2, ADMIN_NAME3, ADMIN_NAME4
-from config import ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, QUICK_REPLY_LABEL1, QUICK_REPLY_LABEL2, QUICK_REPLY_LABEL3
+from config import ADMIN_NAME1, ADMIN_NAME2, ADMIN_NAME3, ADMIN_NAME4, ADMIN_NAME5
+from config import ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, ADMIN_ID5, QUICK_REPLY_LABEL1, QUICK_REPLY_LABEL2, QUICK_REPLY_LABEL3
 from utils import (add_pending_entry, remove_pending_entry, get_pending_entry,
                    add_assignment, remove_assignment, get_assignment,
                    extract_user_id, admin_keyboard, send_countdown_message,
@@ -17,7 +17,7 @@ def register_handlers(bot: telebot.TeleBot):
 
     @bot.message_handler(
         func=lambda m: m.from_user.id in
-        [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4] and m.text in [
+        [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, ADMIN_ID5] and m.text in [
             QUICK_REPLY_LABEL1, QUICK_REPLY_LABEL2, QUICK_REPLY_LABEL3
         ] and m.reply_to_message is None)
     def warn_no_reply(message):
@@ -28,7 +28,7 @@ def register_handlers(bot: telebot.TeleBot):
                                         QUICK_REPLY_LABEL3))
 
     @bot.message_handler(func=lambda m: m.from_user.id in [
-        ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4
+        ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, ADMIN_ID5
     ] and m.reply_to_message is not None,
                          content_types=['text'])
     def admin_reply(message):
@@ -46,7 +46,7 @@ def register_handlers(bot: telebot.TeleBot):
                                  QUICK_REPLY_LABEL3))
             return
 
-        if target_id in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4]:
+        if target_id in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, ADMIN_ID5]:
             bot.send_message(message.chat.id,
                              "❌ لا يمكن الرد على نفسك.",
                              reply_markup=admin_keyboard(
@@ -93,7 +93,7 @@ def register_handlers(bot: telebot.TeleBot):
         send_countdown_message(bot, message.chat.id, "✅ تم إرسال الرد.")
 
     @bot.message_handler(func=lambda m: m.from_user.id in [
-        ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4
+        ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, ADMIN_ID5
     ] and m.reply_to_message is not None,
                          content_types=['photo'])
     def admin_reply_photo(message):
@@ -108,7 +108,7 @@ def register_handlers(bot: telebot.TeleBot):
                                  QUICK_REPLY_LABEL3))
             return
 
-        if target_id in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4]:
+        if target_id in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, ADMIN_ID5]:
             bot.send_message(message.chat.id,
                              "❌ لا يمكن الرد على نفسك.",
                              reply_markup=admin_keyboard(
@@ -165,7 +165,7 @@ def register_handlers(bot: telebot.TeleBot):
         args = message.text.split(" ")
         ref_code = args[1] if len(args) > 1 else None
 
-        if uid in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4]:
+        if uid in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, ADMIN_ID5]:
             bot.send_message(
                 message.chat.id,
                 "مرحباً بك! لقد أصبحت الآن أدمن في البوت 😉\n"
@@ -210,7 +210,7 @@ def register_handlers(bot: telebot.TeleBot):
         text = (message.text or "").strip()
         text_lower = text.lower()
 
-        if uid in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4]:
+        if uid in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, ADMIN_ID5]:
             return
 
         price = ("اقوي خصوووومات على عملات تيك توك🔥\n"
@@ -281,7 +281,7 @@ def register_handlers(bot: telebot.TeleBot):
                                                 callback_data=f"accept:{key}")
         keyboard.add(accept_btn)
 
-        for admin_id in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4]:
+        for admin_id in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, ADMIN_ID5]:
             try:
                 bot.send_message(
                     admin_id,
@@ -294,7 +294,7 @@ def register_handlers(bot: telebot.TeleBot):
     @bot.message_handler(content_types=['photo'])
     def handle_user_photo(message):
         uid = message.from_user.id
-        if uid in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4]:
+        if uid in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, ADMIN_ID5]:
             return
 
         uname = message.from_user.username or message.from_user.first_name or "Unknown"
@@ -321,7 +321,7 @@ def register_handlers(bot: telebot.TeleBot):
                                                 callback_data=f"accept:{key}")
         keyboard.add(accept_btn)
 
-        for admin_id in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4]:
+        for admin_id in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, ADMIN_ID5]:
             try:
                 bot.send_message(
                     admin_id,
@@ -344,6 +344,8 @@ def register_handlers(bot: telebot.TeleBot):
             return ADMIN_NAME3
         elif admin_id == ADMIN_ID4:
             return ADMIN_NAME4
+        elif admin_id == ADMIN_ID5:
+            return ADMIN_NAME5
         else:
             return "الأدمن"
 
@@ -352,7 +354,7 @@ def register_handlers(bot: telebot.TeleBot):
     def accept_callback(call):
         admin_id = call.from_user.id
 
-        if admin_id not in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4]:
+        if admin_id not in [ADMIN_ID1, ADMIN_ID2, ADMIN_ID3, ADMIN_ID4, ADMIN_ID5]:
             bot.answer_callback_query(call.id, "❌ غير مسموح بهذا الإجراء.")
             return
 
